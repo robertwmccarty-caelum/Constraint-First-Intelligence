@@ -1,0 +1,200 @@
+# ============================================
+# Π_Projector — Phase 1 Metrics Layer (v1.1)
+# READ-ONLY INSTRUMENTATION
+# ============================================
+
+# Directory structure:
+#
+# src/cfi/metrics/
+#   __init__.py
+#   stability.py
+#   continuity.py
+#   governance.py
+#
+# No imports from engine/repair/clarify mutate behavior.
+# Metrics observe traces, ledgers, and event logs only.
+# ============================================
+
+
+# --------------------------------------------
+# src/cfi/metrics/__init__.py
+# --------------------------------------------
+"""
+Read-only metrics for Π_Projector.
+
+This module provides observability into continuity,
+stability, and governance without altering system behavior.
+"""
+
+from .stability import model_swap_stability, stability_report
+from .continuity import continuity_delta, ledger_divergence
+from .governance import (
+    clarification_resolution_rate,
+    average_turns_to_resolve,
+    governance_report,
+)
+
+
+# --------------------------------------------
+# src/cfi/metrics/stability.py
+# --------------------------------------------
+"""
+Stability metrics.
+
+Quantifies behavior preservation under model replacement.
+No assumptions about model internals.
+"""
+
+from typing import Any, Dict, List
+
+
+def model_swap_stability(
+    baseline_events: List[Dict[str, Any]],
+    candidate_events: List[Dict[str, Any]],
+) -> float:
+    """
+    Compute stability score between two event traces.
+
+    Returns a normalized similarity score in [0, 1].
+    1.0 indicates identical observable behavior.
+    """
+    if not baseline_events or not candidate_events:
+        return 0.0
+
+    shared = min(len(baseline_events), len(candidate_events))
+    matches = sum(
+        1
+        for i in range(shared)
+        if baseline_events[i].get("type") == candidate_events[i].get("type")
+    )
+
+    return matches / shared
+
+
+def stability_report(
+    baseline_events: List[Dict[str, Any]],
+    candidate_events: List[Dict[str, Any]],
+) -> Dict[str, Any]:
+    """
+    Produce a read-only stability report for inspection.
+    """
+    return {
+        "events_baseline": len(baseline_events),
+        "events_candidate": len(candidate_events),
+        "stability_score": model_swap_stability(
+            baseline_events, candidate_events
+        ),
+    }
+
+
+# --------------------------------------------
+# src/cfi/metrics/continuity.py
+# --------------------------------------------
+"""
+Continuity metrics.
+
+Measures identity drift and ledger divergence across runs.
+"""
+
+from typing import Any, Dict, List
+import hashlib
+import json
+
+
+def _hash(obj: Any) -> str:
+    return hashlib.sha256(
+        json.dumps(obj, sort_keys=True).encode("utf-8")
+    ).hexdigest()
+
+
+def ledger_divergence(
+    baseline_ledger: List[Dict[str, Any]],
+    candidate_ledger: List[Dict[str, Any]],
+) -> float:
+    """
+    Fraction of ledger entries that differ.
+    """
+    shared = min(len(baseline_ledger), len(candidate_ledger))
+    if shared == 0:
+        return 0.0
+
+    diffs = sum(
+        1
+        for i in range(shared)
+        if _hash(baseline_ledger[i]) != _hash(candidate_ledger[i])
+    )
+
+    return diffs / shared
+
+
+def continuity_delta(
+    baseline_ledger: List[Dict[str, Any]],
+    candidate_ledger: List[Dict[str, Any]],
+) -> Dict[str, Any]:
+    """
+    High-level continuity summary.
+    """
+    return {
+        "baseline_entries": len(baseline_ledger),
+        "candidate_entries": len(candidate_ledger),
+        "ledger_divergence": ledger_divergence(
+            baseline_ledger, candidate_ledger
+        ),
+    }
+
+
+# --------------------------------------------
+# src/cfi/metrics/governance.py
+# --------------------------------------------
+"""
+Governance metrics.
+
+Measures clarification efficiency and resolution quality.
+"""
+
+from typing import Any, Dict, List
+
+
+def clarification_resolution_rate(events: List[Dict[str, Any]]) -> float:
+    """
+    CRR = resolved_clarifications / total_clarifications
+    """
+    clarifications = [
+        e for e in events if e.get("type") == "clarification"
+    ]
+    if not clarifications:
+        return 1.0
+
+    resolved = [
+        e for e in clarifications if e.get("resolved") is True
+    ]
+
+    return len(resolved) / len(clarifications)
+
+
+def average_turns_to_resolve(events: List[Dict[str, Any]]) -> float:
+    """
+    ATR = mean number of turns until clarification resolution.
+    """
+    turns = [
+        e.get("turns")
+        for e in events
+        if e.get("type") == "clarification" and e.get("turns") is not None
+    ]
+    if not turns:
+        return 0.0
+
+    return sum(turns) / len(turns)
+
+
+def governance_report(events: List[Dict[str, Any]]) -> Dict[str, Any]:
+    """
+    Aggregate governance metrics into a single report.
+    """
+    return {
+        "CRR": clarification_resolution_rate(events),
+        "ATR": average_turns_to_resolve(events),
+        "clarification_events": len(
+            [e for e in events if e.get("type") == "clarification"]
+        ),
+    }
