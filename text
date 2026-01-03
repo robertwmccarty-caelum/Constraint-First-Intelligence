@@ -1,0 +1,13 @@
+# =========================
+# Π_Projector v1.1 — Phase 2
+# Experiment Scaffolding
+# =========================
+
+experiments/
+├── README.md
+├── model_swap/
+│   └── test_swap.py
+├── hysteresis/
+│   └── test_hysteresis.py
+└── clarification_loops/
+    └── test_clarification.py
