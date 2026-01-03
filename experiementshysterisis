@@ -1,0 +1,23 @@
+"""
+Hysteresis Experiment
+
+Measures whether repeated boundary interactions
+change future system behavior.
+"""
+
+from cfi.metrics.continuity import continuity_delta
+
+def test_hysteresis_no_drift():
+    session_a = {
+        "identity_hash": "ID_A",
+        "ledger_hash": "L1",
+    }
+
+    session_b = {
+        "identity_hash": "ID_A",
+        "ledger_hash": "L1",
+    }
+
+    delta = continuity_delta(session_a, session_b)
+
+    assert delta == 0.0
