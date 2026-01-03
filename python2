@@ -1,0 +1,23 @@
+# experiments/hysteresis/test_hysteresis.py
+
+"""
+Hysteresis Experiment
+
+Goal:
+Detect whether repeated boundary interactions introduce drift
+or instability over time.
+"""
+
+from cfi.metrics.continuity import continuity_delta
+from cfi.metrics.governance import governance_report
+
+
+def test_boundary_hysteresis():
+    ledger_t0 = {"state": "clean", "hash": "h0"}
+    ledger_t1 = {"state": "clean", "hash": "h0"}
+
+    delta = continuity_delta(ledger_t0, ledger_t1)
+    report = governance_report(events=[])
+
+    assert delta == 0.0
+    assert report["ATR"] >= 0
