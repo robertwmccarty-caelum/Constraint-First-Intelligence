@@ -1,0 +1,26 @@
+"""
+Model Swap Stability Experiment
+
+Measures whether identity, continuity, and governance metrics
+remain stable when the underlying model is swapped.
+"""
+
+from cfi.metrics.stability import model_swap_stability
+
+def test_model_swap_stability_smoke():
+    baseline = {
+        "ledger_hash": "abc123",
+        "refusal_rate": 0.12,
+        "clarification_rate": 0.31,
+    }
+
+    swapped = {
+        "ledger_hash": "abc123",
+        "refusal_rate": 0.13,
+        "clarification_rate": 0.30,
+    }
+
+    result = model_swap_stability(baseline, swapped)
+
+    assert result["ledger_preserved"] is True
+    assert 0.0 <= result["stability_score"] <= 1.0
