@@ -1,0 +1,16 @@
+# experiments/README.md
+
+# Π_Projector Experiments (Phase 2)
+
+These experiments are **observational only**.
+They do not modify invariants, projection logic, or automaton behavior.
+
+Purpose:
+- Measure stability, continuity, and governance properties
+- Validate Π_Projector invariants under stress
+- Enable falsifiable, repeatable analysis
+
+All experiments are:
+- Model-agnostic
+- Read-only
+- Metrics-driven
