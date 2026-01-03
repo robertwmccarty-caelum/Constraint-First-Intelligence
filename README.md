@@ -88,27 +88,4 @@ I’m open to:
 
 I’m interested in systems that don’t just work *now*, but remain correct, explainable, and governable as they scale.
 
-Thanks for stopping by.
-
----
-
-If you want, I can:
-- Add dynamic GitHub stats / top-language cards
-- Pin and highlight additional repositories
-- Insert badges (availability, contact, languages)
-- Add screenshots, GIFs, or diagrams and short walk-throughs
-- Produce a compact minimalist variant or a more visual portfolio variant
-
-Tell me which elements to add and provide any missing details below — I’ll produce the final polished README ready to paste into your profile repo.
-````
-
-Please provide the items below so I can finish and personalize the README:
-
-1. Preferred display name and pronouns (if any).
-2. Contact links to include (email, website, LinkedIn, X/Twitter, Mastodon, GitHub Sponsors, etc.) — paste full URLs.
-3. Are you open to work / available for hire? If yes, what types of engagements (research, consulting, contracting, full-time)?
-4. Any additional projects to feature (repo links + 1–2 sentence descriptions each).
-5. Do you want dynamic widgets/cards (GitHub stats, top languages, streaks)? (Yes / No — if yes, which ones)
-6. Any visual assets to include (profile image, project screenshots, GIFs, logos) — paste URLs.
-7. Preferred README style: Minimalist · Technical · Portfolio · Other (specify).
-8. Where should I place the final file? (profile repo name, e.g., `robertwmccarty-caelum/robertwmccarty-caelum`)
+Thanks for stopping by
