@@ -1,0 +1,188 @@
+1) Objects and spaces
+	•	Let Σ* be the set of all finite strings (model outputs, user inputs, etc.).
+	•	Let Y be the space of typed artifacts the system emits (e.g., structured text, JSON, tool calls). Think Y ⊆ Σ* with extra typing.
+	•	Let I be an invariant registry: a finite set of invariants
+\mathcal I = \{I_1,\dots,I_m\}.
+Each invariant is a predicate (possibly partial) on artifacts:
+I_j: Y \times \mathcal C \to \{0,1\},
+where \mathcal C is the “context bundle” (ledger state, user-provided facts, policy, etc.).
+	•	Define the violation indicator for invariant I_j:
+v_j(y;\mathcal C) = 1 - I_j(y,\mathcal C)\in\{0,1\}.
+	•	Define a violation vector
+v(y;\mathcal C) = (v_1(y;\mathcal C),\dots,v_m(y;\mathcal C))\in\{0,1\}^m.
+	•	Define a precedence weighting w\in\mathbb R_{\ge 0}^m (Safety > Truth > Identity > Style, etc.), and a Violation Score:
+\mathrm{ViolScore}(y;\mathcal C)= \langle w,\, v(y;\mathcal C)\rangle.
+
+The artifact is compliant iff:
+\mathrm{ViolScore}(y;\mathcal C)=0 \quad \Leftrightarrow\quad \forall j,\ I_j(y,\mathcal C)=1.
+
+⸻
+
+2) MUS (Minimal Unsatisfiable Set)
+
+Let \mathcal I'\subseteq\mathcal I. Define “satisfiable” for a candidate y as:
+\mathrm{SAT}(\mathcal I',y;\mathcal C)\iff \forall I_j\in \mathcal I',\ I_j(y,\mathcal C)=1.
+
+Given y, define the blocking set:
+\mathrm{Block}(y;\mathcal C)=\{I_j\in\mathcal I\mid I_j(y,\mathcal C)=0\}.
+
+A Minimal Unsatisfiable Set (MUS) for y is any subset \mathcal M\subseteq \mathcal I such that:
+	1.	unsatisfied:
+\exists I_j\in\mathcal M: I_j(y,\mathcal C)=0,
+(equivalently \mathcal M\subseteq \mathrm{Block}(y;\mathcal C) in the simple “single candidate” setting)
+	2.	minimal (no proper subset has the same blocking explanation):
+\forall \mathcal M'\subsetneq \mathcal M,\ \mathcal M' \not\equiv \mathcal M \text{ as an explanation of failure}.
+
+Operationally, Π_Projector uses MUS as the smallest explanation set the system must address next.
+
+⸻
+
+3) Repair operators and monotonicity
+
+Let T be a finite set of repair templates (delete, hedge, narrow scope, add citation placeholder, etc.). Each template induces an operator:
+T_k: Y \times \mathcal C \to Y.
+
+A repair step is:
+y_{t+1} = T_{k_t}(y_t,\mathcal C).
+
+Monotonic Repair requirement (core v1.0 discovery):
+\mathrm{ViolScore}(y_{t+1};\mathcal C)\ <\ \mathrm{ViolScore}(y_t;\mathcal C)
+for all applied repair steps until success, or else the repair is declared stalled.
+
+Define the repair budget K. If no monotone step exists or t\ge K, transition to clarification.
+
+⸻
+
+4) The Projection operator Π_\mathcal I
+
+Given raw model proposal y_{\text{raw}}, the projection is the best compliant point reachable by allowed repairs:
+
+\Pi_{\mathcal I}(y_{\text{raw}};\mathcal C)
+=
+\begin{cases}
+y^* & \text{if } \exists \text{ monotone repair path to } \mathrm{ViolScore}=0\\
+\bot & \text{otherwise.}
+\end{cases}
+
+You can also write this as an optimization over the closure of allowed repairs \mathrm{Cl}_T(y_{\text{raw}}):
+
+y^* = \arg\min_{y\in \mathrm{Cl}_T(y_{\text{raw}})} \mathrm{ViolScore}(y;\mathcal C)
+\quad \text{s.t.}\quad \mathrm{ViolScore}(y;\mathcal C)=0.
+
+If infeasible, Π returns \bot (needs clarification or hard refuse).
+
+⸻
+
+5) Clarification Requests as typed transitions
+
+A Clarification Request is a typed object:
+\mathrm{CR} = (id,\ \text{field},\ q,\ \mathcal M)
+where:
+	•	id binds to invariant(s) (lineage anchor),
+	•	field is single-variable (CR_SINGLE_VARIABLE),
+	•	q is a question,
+	•	\mathcal M is the MUS being targeted.
+
+Mathematically: CR injects a new constraint datum \delta\in\Delta (user-provided coordinate) into context:
+\mathcal C' = \mathcal C \oplus \delta
+(append-only, lineage-preserving).
+
+Then RESUME re-evaluates the same y_{\text{raw}}:
+\Pi_{\mathcal I}(y_{\text{raw}};\mathcal C') \quad \text{(no regeneration)}
+
+That is the “continuity must be enforced” axiom in equation form.
+
+⸻
+
+6) The governance automaton (formal)
+
+Define state set:
+S=\{\textsf{GENERATE},\textsf{SCAN},\textsf{REPAIR},\textsf{CLARIFY},\textsf{WAIT},\textsf{RESUME},\textsf{OK},\textsf{HARD\_REFUSE}\}.
+
+Define transition function:
+\delta: S \times (Y\times \mathcal C) \to S \times (Y \cup \{\mathrm{CR},\bot\}) \times \mathcal C
+
+Key transitions:
+	•	SCAN → OK if \mathrm{ViolScore}(y;\mathcal C)=0
+	•	SCAN → REPAIR if MUS nonempty
+	•	REPAIR → OK if ViolScore hits 0
+	•	REPAIR → CLARIFY if stalled or t>K
+	•	CLARIFY → WAIT if resolvable and non-safety
+	•	CLARIFY → HARD_REFUSE if safety firebreak or turn bound exceeded
+	•	WAIT → RESUME on user datum \delta
+	•	RESUME → SCAN with same y_{\text{raw}}, updated \mathcal C
+
+⸻
+
+7) v1.1 Metrics: formal definitions
+
+7.1 CRR — Clarification Resolution Rate
+
+For a set of clarification episodes E. Each episode e ends either resolved (eventually OK) or unresolved (HARD_REFUSE / timeout).
+
+Let r(e)\in\{0,1\} be resolution indicator.
+
+\mathrm{CRR} = \frac{1}{|E|}\sum_{e\in E} r(e).
+
+7.2 ATR — Average Turns-to-Resolve
+
+Let t(e) be number of clarification turns used in episode e (count entries into CLARIFY or user responses), capped by policy bound T_{\max}.
+
+\mathrm{ATR} = \frac{\sum_{e\in E} r(e)\, t(e)}{\sum_{e\in E} r(e)}.
+(Computed over resolved episodes.)
+
+7.3 “Sharpness”
+
+One clean definition: sharpness measures how quickly violation mass collapses after user-supplied coordinates.
+
+Let V_t = \mathrm{ViolScore}(y_t;\mathcal C_t) measured at each turn in an episode.
+
+Define episode sharpness:
+\mathrm{Sharp}(e)= \frac{V_0 - V_{t^*}}{t^*}
+where t^* is the resolution turn (or T_{\max} if unresolved, in which case you can define a “bounded sharpness” that penalizes non-resolution).
+
+Higher = constraints + repair templates are well-specified.
+
+7.4 Δ_cont — Continuity drift
+
+Continuity compares ledger commitments across runs.
+
+Let the ledger state produce a commitment (hash or Merkle root):
+H(\mathcal C)\in\{0,1\}^{256}.
+
+Given two runs a and b (same identity intent), define:
+\Delta_{\mathrm{cont}}(a,b)=
+\begin{cases}
+0 & \text{if } H(\mathcal C_a)=H(\mathcal C_b)\\
+1 & \text{otherwise}
+\end{cases}
+(binary) or, if you want a graded metric:
+\Delta_{\mathrm{cont}}(a,b)= d\big(H(\mathcal C_a), H(\mathcal C_b)\big)
+where d could be normalized Hamming distance or a structured diff score over ledger entries.
+
+7.5 Stability under model swap
+
+Let M_1, M_2 be two different models. Using the same y_{\text{raw}} seed path and same context \mathcal C, you measure stability via equality of projected outputs or equality of compliance outcomes.
+
+A simple stability score:
+\mathrm{Stab}(M_1,M_2)=\mathbb E_{x\sim \mathcal D}\left[\mathbf 1\left(\Pi_{\mathcal I}^{M_1}(x;\mathcal C)\equiv \Pi_{\mathcal I}^{M_2}(x;\mathcal C)\right)\right]
+where “\equiv” can mean:
+	•	exact string match, or
+	•	same terminal state (OK vs HARD_REFUSE), or
+	•	same violation vector, etc.
+
+⸻
+
+8) Deep Scan / Masked Safety (math version)
+
+Let repairs be a set of candidate transforms T_k. A “masked safety” cliff exists if fixing one violation could unmask a safety violation.
+
+Formally, define a safety subset \mathcal I_{\text{safety}}\subseteq \mathcal I.
+
+Deep scan checks prospective repairs:
+\exists k:\ \mathrm{ViolScore}(T_k(y;\mathcal C);\mathcal C) < \mathrm{ViolScore}(y;\mathcal C)
+\ \land\
+\exists I_s\in\mathcal I_{\text{safety}}:\ I_s(T_k(y;\mathcal C),\mathcal C)=0
+even if currently I_s(y,\mathcal C)=1 or not evaluated.
+
+If true, the repair path is rejected or forced to T1_DELETE, depending on your spec.
