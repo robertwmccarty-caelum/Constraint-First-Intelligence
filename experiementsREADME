@@ -1,0 +1,11 @@
+# Π_Projector — Phase 2 Experiments
+
+These experiments are **observational only**.
+They do not alter automaton behavior, invariants, or repair logic.
+
+Purpose:
+- Measure governance properties
+- Stress-test invariant stability
+- Generate falsifiable alignment evidence
+
+All experiments consume metrics from `cfi.metrics`.
