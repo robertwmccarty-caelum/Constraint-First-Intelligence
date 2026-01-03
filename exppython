@@ -1,0 +1,31 @@
+# experiments/model_swap/test_swap.py
+
+"""
+Model Swap Stability Experiment
+
+Goal:
+Measure continuity and governance stability when the underlying model
+is replaced, while the invariant ledger remains fixed.
+"""
+
+from cfi.metrics.stability import model_swap_stability
+from cfi.metrics.continuity import continuity_delta
+from cfi.metrics.governance import governance_report
+
+
+def test_model_swap_stability():
+    # Placeholder objects (intentionally abstract)
+    baseline_ledger = {"identity": "π_projector_v1", "hash": "abc123"}
+    swapped_ledger = {"identity": "π_projector_v1", "hash": "abc123"}
+
+    stability = model_swap_stability(
+        baseline_ledger=baseline_ledger,
+        swapped_ledger=swapped_ledger,
+    )
+
+    delta = continuity_delta(baseline_ledger, swapped_ledger)
+    report = governance_report(events=[])
+
+    assert stability >= 0.0
+    assert delta == 0.0
+    assert "CRR" in report
