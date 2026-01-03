@@ -1,0 +1,20 @@
+"""
+Clarification Loop Experiment
+
+Measures resolution behavior under repeated,
+adversarial clarification requests.
+"""
+
+from cfi.metrics.governance import governance_report
+
+def test_clarification_loop_metrics():
+    events = [
+        {"type": "clarification", "resolved": True, "turns": 1},
+        {"type": "clarification", "resolved": True, "turns": 2},
+        {"type": "clarification", "resolved": False, "turns": 3},
+    ]
+
+    report = governance_report(events)
+
+    assert 0.0 <= report["CRR"] <= 1.0
+    assert report["ATR"] >= 1
