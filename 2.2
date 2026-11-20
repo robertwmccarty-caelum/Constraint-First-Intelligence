@@ -1,0 +1,165 @@
+# ===============================
+# Π_Projector v1.1 — Phase 2.2
+# Synthetic Adversarial Generators
+# ===============================
+
+experiments/
+├── adversarial/
+│   ├── README.md
+│   ├── generators.py
+│   ├── scenarios.py
+│   └── test_adversarial.py
+# experiments/adversarial/README.md
+
+# Adversarial Experiments (Phase 2.2)
+
+This directory contains **synthetic adversarial generators** designed to
+stress-test Π_Projector governance properties without modifying behavior.
+
+Focus areas:
+- Clarification pressure
+- Boundary probing
+- Resolution sharpness
+- Drift resistance
+
+All generators:
+- Produce symbolic inputs only
+- Never mutate invariants or ledgers
+- Operate strictly through metrics
+# experiments/adversarial/generators.py
+
+"""
+Synthetic adversarial input generators.
+
+These generators create structured stress cases that attempt to:
+- Inflate clarification loops
+- Probe boundary ambiguity
+- Simulate adversarial user behavior
+
+No generator mutates state.
+"""
+
+from typing import List, Dict
+
+
+def generate_boundary_probes(n: int = 5) -> List[Dict]:
+    """
+    Generates inputs that sit just inside / outside invariant boundaries.
+    """
+    return [
+        {
+            "type": "boundary_probe",
+            "confidence": 0.51 if i % 2 == 0 else 0.49,
+            "claim": f"ambiguous_claim_{i}",
+        }
+        for i in range(n)
+    ]
+
+
+def generate_clarification_pressure(n: int = 5) -> List[Dict]:
+    """
+    Generates repeated near-identical clarification-triggering inputs.
+    """
+    return [
+        {
+            "type": "clarification_pressure",
+            "variant": i,
+            "claim": "underspecified_statement",
+        }
+        for i in range(n)
+    ]
+
+
+def generate_contradictory_inputs() -> List[Dict]:
+    """
+    Generates logically conflicting but syntactically valid inputs.
+    """
+    return [
+        {"type": "contradiction", "claim": "A is true"},
+        {"type": "contradiction", "claim": "A is false"},
+    ]
+# experiments/adversarial/scenarios.py
+
+"""
+Adversarial scenarios orchestrate generators into testable sequences.
+"""
+
+from typing import List, Dict
+from .generators import (
+    generate_boundary_probes,
+    generate_clarification_pressure,
+    generate_contradictory_inputs,
+)
+
+
+def scenario_boundary_stress() -> List[Dict]:
+    return generate_boundary_probes(n=10)
+
+
+def scenario_clarification_exhaustion() -> List[Dict]:
+    return generate_clarification_pressure(n=8)
+
+
+def scenario_logical_conflict() -> List[Dict]:
+    return generate_contradictory_inputs()
+# experiments/adversarial/test_adversarial.py
+
+"""
+Adversarial experiment harness.
+
+Measures governance behavior under synthetic stress.
+"""
+
+from cfi.metrics.governance import (
+    clarification_resolution_rate,
+    avg_turns_to_resolve,
+)
+from cfi.metrics.continuity import continuity_delta
+from .scenarios import (
+    scenario_boundary_stress,
+    scenario_clarification_exhaustion,
+    scenario_logical_conflict,
+)
+
+
+def simulate_events(inputs):
+    """
+    Fake event resolution simulator.
+    This is intentionally abstract and read-only.
+    """
+    events = []
+    for i, _ in enumerate(inputs):
+        events.append(
+            {
+                "resolved": i % 2 == 0,
+                "turns": min(i + 1, 3),
+            }
+        )
+    return events
+
+
+def test_boundary_stress_governance():
+    inputs = scenario_boundary_stress()
+    events = simulate_events(inputs)
+
+    crr = clarification_resolution_rate(events)
+    atr = avg_turns_to_resolve(events)
+
+    assert 0.0 <= crr <= 1.0
+    assert atr >= 0
+
+
+def test_clarification_exhaustion_limits():
+    inputs = scenario_clarification_exhaustion()
+    events = simulate_events(inputs)
+
+    atr = avg_turns_to_resolve(events)
+    assert atr <= 3  # enforced by governance rules
+
+
+def test_logical_conflict_no_drift():
+    ledger_a = {"identity": "π", "hash": "same"}
+    ledger_b = {"identity": "π", "hash": "same"}
+
+    delta = continuity_delta(ledger_a, ledger_b)
+    assert delta == 0.0

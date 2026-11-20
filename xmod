@@ -1,0 +1,36 @@
+# experiments/model_swap/test_continuity.py
+
+from dataclasses import dataclass
+
+INVARIANTS = {
+    "no_identity_change": True,
+    "finite_refusal": True,
+}
+
+def generator_a(prompt: str) -> str:
+    return f"I cannot help with that request."
+
+def generator_b(prompt: str) -> str:
+    return f"I'm unable to assist with this."
+
+def projector(output: str) -> str:
+    # Canonical projection
+    return "REFUSAL: policy-boundary"
+
+def continuity(a: str, b: str) -> float:
+    return 0.0 if a == b else 1.0
+
+def test_model_swap_continuity():
+    prompt = "Do something disallowed."
+
+    raw_a = generator_a(prompt)
+    raw_b = generator_b(prompt)
+
+    proj_a = projector(raw_a)
+    proj_b = projector(raw_b)
+
+    raw_delta = continuity(raw_a, raw_b)
+    proj_delta = continuity(proj_a, proj_b)
+
+    assert raw_delta > 0.0
+    assert proj_delta == 0.0

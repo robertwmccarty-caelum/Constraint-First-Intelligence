@@ -1,0 +1,192 @@
+Validation Ladder: Speculative → Validated
+
+Think of this as progressive burden of proof, not “more code.”
+
+⸻
+
+Level 0 — Speculative (current baseline)
+
+Status: Conceptual / architectural proposal
+
+Evidence present
+	•	Coherent architecture
+	•	Explicit invariants and automaton
+	•	Read-only metrics layer
+	•	Clear non-goals and scope boundaries
+
+What reviewers say
+
+“Interesting idea, but unproven.”
+
+✔️ You are already here.
+
+⸻
+
+Level 1 — Internally Consistent (Formal Validity)
+
+Goal: Prove the system is self-consistent and non-contradictory.
+
+Required Evidence
+	1.	Formal state transition guarantees
+	•	Show that for all inputs:
+	•	The automaton terminates in {OK, HARD_REFUSE}
+	•	No silent state exists
+	•	Can be done with:
+	•	Invariants + bounded turns + monotonic repair proofs
+	2.	Metric soundness
+	•	Demonstrate:
+	•	CRR, ATR, Δ_cont are well-defined functions
+	•	Metrics are invariant under no-op model swaps
+	3.	Negative proofs
+	•	Show classes of behavior the system cannot express
+	•	Example:
+	•	Infinite clarification loops
+	•	Unlogged refusal states
+
+📌 Deliverable
+	•	Short formal appendix or spec note
+	•	No benchmarks required
+
+Result
+
+“The architecture is internally sound.”
+
+⸻
+
+Level 2 — Behavioral Distinction (Empirical Differentiation)
+
+Goal: Prove Π_Projector behaves differently from standard LLM pipelines under identical conditions.
+
+Required Evidence
+	1.	A/B behavior comparison
+	•	Same model
+	•	Same prompt
+	•	With and without Π_Projector
+	2.	Measured differences
+	•	Refusal transparency (typed vs opaque)
+	•	Identity drift across sessions
+	•	Stability under prompt perturbation
+	3.	Failure case taxonomy
+	•	At least 10 examples where:
+	•	Baseline system fails silently
+	•	Π_Projector produces:
+	•	CR
+	•	or HARD_REFUSE with MUS
+
+📌 Deliverable
+	•	Small experiment notebook
+	•	Tables, not hype
+
+Result
+
+“This system enforces properties baseline systems do not.”
+
+⸻
+
+Level 3 — Model-Agnostic Stability (Core Claim Validation)
+
+Goal: Validate the central thesis:
+
+Alignment is external and survives model replacement.
+
+Required Evidence
+	1.	Model swap experiment
+	•	M₁ → M₂ (e.g., GPT-x → Claude → local)
+	•	Same invariants
+	•	Same ledger
+	2.	Measured invariants
+	•	Δ_cont ≈ 0 across swaps
+	•	Refusal class preserved
+	•	CR semantics preserved
+	3.	Counterexample analysis
+	•	Identify where stability breaks
+	•	Attribute cause:
+	•	missing invariant
+	•	model incapability
+	•	ambiguous constraint
+
+📌 Deliverable
+	•	Reproducible experiment
+	•	One figure showing continuity preservation
+
+Result
+
+“The architecture enforces continuity independently of the model.”
+
+This is the first true validation milestone.
+
+⸻
+
+Level 4 — Robustness Under Adversarial Pressure
+
+Goal: Show the system fails gracefully, not catastrophically.
+
+Required Evidence
+	1.	Adversarial clarification loops
+	•	Users attempting to stall, confuse, or exploit CRs
+	•	Measure:
+	•	Turn bounding
+	•	Escalation to HARD_REFUSE
+	2.	Constraint conflict stress tests
+	•	Intentionally contradictory invariants
+	•	Show:
+	•	MUS exposure
+	•	No undefined behavior
+	3.	Governance metrics under stress
+	•	CRR drops predictably
+	•	ATR rises predictably
+	•	No metric collapse
+
+📌 Deliverable
+	•	Stress test suite
+	•	Clear failure explanations
+
+Result
+
+“The system degrades predictably and safely.”
+
+⸻
+
+Level 5 — External Replication (Scientific Validation)
+
+Goal: Prove this is not “Rob-specific magic.”
+
+Required Evidence
+	1.	Independent reproduction
+	•	Another researcher runs:
+	•	same invariants
+	•	same experiments
+	•	different environment
+	2.	Result alignment
+	•	Qualitative behavior matches
+	•	Quantitative metrics within tolerance
+
+📌 Deliverable
+	•	External repo or citation
+
+Result
+
+“This is a valid architectural contribution.”
+
+At this point, the system is validated, even if not optimized.
+
+⸻
+
+What Is Not Required (Important)
+
+You do not need:
+	•	SOTA benchmarks
+	•	Massive datasets
+	•	Human preference studies
+	•	Claims of AGI
+	•	Productization
+
+Those come after validation, not before.
+
+⸻
+
+One-Sentence Validation Criterion (the bar)
+
+Π_Projector is validated if it can be shown to preserve alignment semantics across model swaps, expose failure modes deterministically, and degrade safely under adversarial interaction.
+
+Everything above serves that sentence.
